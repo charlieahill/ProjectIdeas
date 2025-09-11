@@ -445,9 +445,9 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="Project Ideas Manager" VerticalAlignment="Center" Margin="16,0,0,0" Foreground="#F5F5F5" FontWeight="SemiBold" FontSize="16"/>
-                <Button Grid.Column="1" Content="━" Width="36" Height="24" Margin="0,8" Click="Minimize_Click" Style="{StaticResource VoteButtonStyle}" ToolTip="Minimize"/>
-                <Button Grid.Column="2" Content="☐" Width="36" Height="24" Margin="0,8" Click="MaximizeRestore_Click" Style="{StaticResource VoteButtonStyle}" ToolTip="Maximize/Restore"/>
-                <Button Grid.Column="3" Content="✕" Width="36" Height="24" Margin="8,8,8,8" Click="Close_Click" Style="{StaticResource VoteButtonStyle}" ToolTip="Close"/>
+                <Button Grid.Column="1" Content="━" Width="36" Height="24" Margin="0,8" Click="Minimize_Click" Style="{StaticResource VoteButtonStyle}" ToolTip="Minimize" Foreground="{StaticResource SoftWhiteBrush}"/>
+                <Button Grid.Column="2" Content="☐" Width="36" Height="24" Margin="0,8" Click="MaximizeRestore_Click" Style="{StaticResource VoteButtonStyle}" ToolTip="Maximize/Restore" Foreground="{StaticResource SoftWhiteBrush}"/>
+                <Button Grid.Column="3" Content="✕" Width="36" Height="24" Margin="8,8,8,8" Click="Close_Click" Style="{StaticResource VoteButtonStyle}" ToolTip="Close" Foreground="{StaticResource SoftWhiteBrush}"/>
             </Grid>
 
             <!-- Main Content -->

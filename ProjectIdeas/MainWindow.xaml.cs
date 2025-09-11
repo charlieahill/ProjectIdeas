@@ -450,10 +450,56 @@ namespace ProjectIdeas
 
         private void TitleBar_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.Left)
+            // Only handle left button actions
+            if (e.ChangedButton != MouseButton.Left)
+                return;
+
+            // If the click started on an interactive control (like a Button), ignore it
+            if (e.OriginalSource is DependencyObject src && IsInInteractiveControl(src))
+                return;
+
+            if (e.ClickCount == 2)
             {
-                DragMove();
+                // Double-click toggles maximize/restore
+                if (WindowState == WindowState.Maximized)
+                    WindowState = WindowState.Normal;
+                else
+                    WindowState = WindowState.Maximized;
+                e.Handled = true;
             }
+            else if (e.ClickCount == 1)
+            {
+                // Single-click and drag to move
+                try
+                {
+                    DragMove();
+                }
+                catch
+                {
+                    // Ignored - DragMove can throw if called in invalid state
+                }
+            }
+        }
+
+        private static bool IsInInteractiveControl(DependencyObject source)
+        {
+            // Check if the source is a visual element that can receive input
+            if (source is System.Windows.Controls.Control control && control.IsEnabled)
+                return true;
+
+            // Check if the source is a suitable feedback element (like a Button)
+            if (source is System.Windows.Controls.Button)
+                return true;
+
+            // Continue traversing the visual tree
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(source); i++)
+            {
+                var child = VisualTreeHelper.GetChild(source, i);
+                if (IsInInteractiveControl(child))
+                    return true;
+            }
+
+            return false;
         }
     }
 
