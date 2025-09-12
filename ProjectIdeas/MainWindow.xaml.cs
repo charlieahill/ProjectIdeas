@@ -42,6 +42,7 @@ namespace ProjectIdeas
             Title = $"Project Ideas Manager v{VersionManager.GetVersionString()}";
             Loaded += MainWindow_Loaded;
             StateChanged += MainWindow_StateChanged;
+            System.Windows.Input.InputManager.Current.PreProcessInput += InputManager_PreProcessInput;
         }
 
         private void MainWindow_StateChanged(object? sender, EventArgs e)
@@ -310,17 +311,77 @@ namespace ProjectIdeas
             }
         }
 
+        private bool _isShiftPressed = false;
+
+        // Attached property for shift state
+        public static readonly System.Windows.DependencyProperty IsShiftPressedProperty = System.Windows.DependencyProperty.RegisterAttached(
+            "IsShiftPressed", typeof(bool), typeof(MainWindow), new System.Windows.PropertyMetadata(false));
+
+        public static void SetIsShiftPressed(System.Windows.DependencyObject element, bool value)
+        {
+            element.SetValue(IsShiftPressedProperty, value);
+        }
+        public static bool GetIsShiftPressed(System.Windows.DependencyObject element)
+        {
+            return (bool)element.GetValue(IsShiftPressedProperty);
+        }
+
+        private void UpdateMoveButtonVisuals()
+        {
+            foreach (var item in IdeasListView.Items)
+            {
+                var container = IdeasListView.ItemContainerGenerator.ContainerFromItem(item) as System.Windows.Controls.ListViewItem;
+                if (container != null)
+                {
+                    var upBtn = FindVisualChildByTag<System.Windows.Controls.Button>(container, "MoveUp");
+                    var downBtn = FindVisualChildByTag<System.Windows.Controls.Button>(container, "MoveDown");
+                    if (upBtn != null)
+                        SetIsShiftPressed(upBtn, _isShiftPressed);
+                    if (downBtn != null)
+                        SetIsShiftPressed(downBtn, _isShiftPressed);
+                }
+            }
+        }
+
+        private T? FindVisualChildByTag<T>(DependencyObject parent, string tag) where T : FrameworkElement
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T tChild && tChild.Tag is string t && t == tag)
+                    return tChild;
+                var result = FindVisualChildByTag<T>(child, tag);
+                if (result != null)
+                    return result;
+            }
+            return null;
+        }
+
         private void MoveProjectIdeaUp_Click(object sender, RoutedEventArgs e)
         {
             if (sender is System.Windows.Controls.Button btn && btn.DataContext is ProjectIdea idea)
             {
                 var list = _filteredIdeas;
                 int idx = list.IndexOf(idea);
-                if (idx > 0)
+                if (_isShiftPressed)
                 {
-                    list.Move(idx, idx - 1);
-                    IdeasListView.Items.Refresh();
-                    IdeasListView.SelectedItem = idea;
+                    // Move to top
+                    if (idx > 0)
+                    {
+                        list.Move(idx, 0);
+                        IdeasListView.Items.Refresh();
+                        IdeasListView.SelectedItem = idea;
+                    }
+                }
+                else
+                {
+                    // Normal move up one
+                    if (idx > 0)
+                    {
+                        list.Move(idx, idx - 1);
+                        IdeasListView.Items.Refresh();
+                        IdeasListView.SelectedItem = idea;
+                    }
                 }
             }
         }
@@ -331,11 +392,25 @@ namespace ProjectIdeas
             {
                 var list = _filteredIdeas;
                 int idx = list.IndexOf(idea);
-                if (idx < list.Count - 1 && idx >= 0)
+                if (_isShiftPressed)
                 {
-                    list.Move(idx, idx + 1);
-                    IdeasListView.Items.Refresh();
-                    IdeasListView.SelectedItem = idea;
+                    // Move to bottom
+                    if (idx < list.Count - 1 && idx >= 0)
+                    {
+                        list.Move(idx, list.Count - 1);
+                        IdeasListView.Items.Refresh();
+                        IdeasListView.SelectedItem = idea;
+                    }
+                }
+                else
+                {
+                    // Normal move down one
+                    if (idx < list.Count - 1 && idx >= 0)
+                    {
+                        list.Move(idx, idx + 1);
+                        IdeasListView.Items.Refresh();
+                        IdeasListView.SelectedItem = idea;
+                    }
                 }
             }
         }
@@ -509,54 +584,71 @@ namespace ProjectIdeas
             Close();
         }
 
-        private void TitleBar_MouseDown(object sender, MouseButtonEventArgs e)
+        // Improved: Use PreviewMouseLeftButtonDown for more reliable title bar drag/maximize/restore
+        private void TitleBar_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            // Only handle left button actions
-            if (e.ChangedButton != MouseButton.Left)
+            // Only handle if not clicking on a Button or its child
+            if (e.OriginalSource is DependencyObject src && IsInButtonOrChild(src))
                 return;
 
-            // If the click started on an interactive control (like a Button), ignore it
-            if (e.OriginalSource is DependencyObject src && IsInInteractiveControl(src))
-                return;
-
+            // Double-click toggles maximize/restore
             if (e.ClickCount == 2)
             {
-                // Double-click toggles maximize/restore - reuse same logic as button
                 MaximizeRestore_Click(this, new RoutedEventArgs());
                 e.Handled = true;
+                return;
             }
-            else if (e.ClickCount == 1)
+
+            // Single-click and drag to move (with maximize/restore logic)
+            if (e.ClickCount == 1)
             {
-                // Single-click and drag to move
-                try
+                if (WindowState == WindowState.Maximized || _isCustomMaximized)
                 {
-                    DragMove();
+                    var mouseScreen = PointToScreen(e.GetPosition(this));
+                    double restoreWidth, restoreHeight;
+                    if (_isCustomMaximized)
+                    {
+                        restoreWidth = _restoreBounds.Width;
+                        restoreHeight = _restoreBounds.Height;
+                        _isCustomMaximized = false;
+                        WindowState = WindowState.Normal;
+                        UpdateMaximizeIcon(false);
+                    }
+                    else
+                    {
+                        restoreWidth = RestoreBounds.Width;
+                        restoreHeight = RestoreBounds.Height;
+                        WindowState = WindowState.Normal;
+                        UpdateMaximizeIcon(false);
+                    }
+                    var mousePos = e.GetPosition(this);
+                    double xRatio = mousePos.X / ActualWidth;
+                    double yRatio = mousePos.Y / ActualHeight;
+                    Width = restoreWidth;
+                    Height = restoreHeight;
+                    Left = mouseScreen.X - Width * xRatio;
+                    Top = mouseScreen.Y - Height * yRatio;
+                    UpdateLayout();
+                    try { DragMove(); } catch { }
+                    e.Handled = true;
                 }
-                catch
+                else
                 {
-                    // Ignored - DragMove can throw if called in invalid state
+                    try { DragMove(); } catch { }
+                    e.Handled = true;
                 }
             }
         }
 
-        private static bool IsInInteractiveControl(DependencyObject source)
+        // Helper: check if the source is a Button or inside a Button
+        private bool IsInButtonOrChild(DependencyObject src)
         {
-            // Check if the source is a visual element that can receive input
-            if (source is System.Windows.Controls.Control control && control.IsEnabled)
-                return true;
-
-            // Check if the source is a suitable feedback element (like a Button)
-            if (source is System.Windows.Controls.Button)
-                return true;
-
-            // Continue traversing the visual tree
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(source); i++)
+            while (src != null)
             {
-                var child = VisualTreeHelper.GetChild(source, i);
-                if (IsInInteractiveControl(child))
+                if (src is System.Windows.Controls.Button)
                     return true;
+                src = System.Windows.Media.VisualTreeHelper.GetParent(src);
             }
-
             return false;
         }
 
@@ -683,6 +775,58 @@ namespace ProjectIdeas
             // Use common symbols: restore (🗗) for maximized, square (☐) for normal
             btn.Content = isMaximized ? "🗗" : "☐";
             btn.ToolTip = isMaximized ? "Restore" : "Maximize";
+        }
+
+        // Open folder link in Windows Explorer when double-clicking a VersionHistory item
+        private void VersionHistoryListView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is System.Windows.Controls.ListView lv && lv.SelectedItem is ProjectIdeas.Models.VersionRecord vr)
+            {
+                var folder = vr.FolderLink;
+                if (!string.IsNullOrWhiteSpace(folder) && Directory.Exists(folder))
+                {
+                    try
+                    {
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = folder,
+                            UseShellExecute = true
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Windows.MessageBox.Show($"Could not open folder: {ex.Message}");
+                    }
+                }
+            }
+        }
+
+        // Sort ideas by votes descending
+        private void SortByVotingButton_Click(object sender, RoutedEventArgs e)
+        {
+            var sorted = _filteredIdeas.OrderByDescending(i => i.Votes).ToList();
+            _filteredIdeas.Clear();
+            foreach (var idea in sorted)
+                _filteredIdeas.Add(idea);
+            if (_filteredIdeas.Count > 0)
+                IdeasListView.SelectedIndex = 0;
+        }
+
+        private void InputManager_PreProcessInput(object sender, System.Windows.Input.PreProcessInputEventArgs e)
+        {
+            var inputEventArgs = e.StagingItem.Input;
+            if (inputEventArgs is System.Windows.Input.KeyEventArgs keyArgs)
+            {
+                if ((keyArgs.Key == System.Windows.Input.Key.LeftShift || keyArgs.Key == System.Windows.Input.Key.RightShift))
+                {
+                    bool shiftDown = (System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Shift) == System.Windows.Input.ModifierKeys.Shift;
+                    if (shiftDown != _isShiftPressed)
+                    {
+                        _isShiftPressed = shiftDown;
+                        UpdateMoveButtonVisuals();
+                    }
+                }
+            }
         }
     }
 
