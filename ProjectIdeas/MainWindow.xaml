@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ProjectIdeas"
         mc:Ignorable="d"
-        Title="Project Ideas Manager" Height="700" Width="1200"
+        Title="Project Ideas Manager" Height="900" Width="1400"
+        MinHeight="820" MinWidth="1200"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -427,17 +428,47 @@
                 </Grid>
             </Border>
         </DataTemplate>
+
+        <!-- Version Item Template -->
+        <DataTemplate x:Key="VersionItemTemplate">
+            <Border Background="{StaticResource AccentGrayBrush}" CornerRadius="6" Margin="4,2" Padding="6">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="120"/>
+                        <ColumnDefinition Width="200"/>
+                        <ColumnDefinition Width="300"/>
+                        <ColumnDefinition Width="160"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="{Binding VersionNumber}" VerticalAlignment="Center" Foreground="{StaticResource SoftWhiteBrush}" FontWeight="SemiBold"/>
+                    <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" Foreground="{StaticResource SoftWhiteBrush}"/>
+                    <TextBlock Grid.Column="2" Text="{Binding FolderLink}" VerticalAlignment="Center" Foreground="{StaticResource SoftWhiteBrush}" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Grid.Column="3" Text="{Binding ReleaseDate, StringFormat=yyyy-MM-dd HH:mm}" VerticalAlignment="Center" Foreground="{StaticResource SoftWhiteBrush}"/>
+                    <Button Grid.Column="4" Content="🗑" Style="{StaticResource VoteButtonStyle}" Click="RemoveVersion_Click" CommandParameter="{Binding}" ToolTip="Remove version" Margin="8,0,0,0"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <local:StringNullOrEmptyToVisibilityConverter x:Key="EmptyToVis"/>
+
     </Window.Resources>
 
-    <Border Background="#23272F" CornerRadius="12" BorderBrush="#333" BorderThickness="1" SnapsToDevicePixels="True">
-        <Grid>
+    <Border Background="#23272F" CornerRadius="12" BorderBrush="#333" BorderThickness="3" SnapsToDevicePixels="True">
+        <Grid Margin="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="40"/>
+                <RowDefinition Height="3"/>
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="3"/>
             </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="3"/>
+            </Grid.ColumnDefinitions>
 
-            <!-- Custom Title Bar -->
-            <Grid Grid.Row="0" Background="#23272F" MouseDown="TitleBar_MouseDown">
+            <!-- Custom Title Bar (flush to top and sides) -->
+            <Grid Grid.Row="0" Grid.Column="1" Background="#23272F" MouseDown="TitleBar_MouseDown">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
@@ -450,13 +481,12 @@
                 <Button Grid.Column="3" Content="✕" Width="36" Height="24" Margin="8,8,8,8" Click="Close_Click" Style="{StaticResource VoteButtonStyle}" ToolTip="Close" Foreground="{StaticResource SoftWhiteBrush}"/>
             </Grid>
 
-            <!-- Main Content -->
-            <Grid Grid.Row="1" Margin="0">
+            <!-- Main Content with padding border -->
+            <Grid Grid.Row="2" Grid.Column="1" Margin="1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="350"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-
                 <!-- Left Panel -->
                 <Border Background="{StaticResource SecondaryDarkBrush}" CornerRadius="14">
                     <DockPanel>
@@ -500,7 +530,6 @@
                                   Background="{StaticResource SecondaryDarkBrush}"/>
                     </DockPanel>
                 </Border>
-
                 <!-- Right Panel -->
                 <Border Grid.Column="1" Margin="10,0,0,0" Background="{StaticResource SecondaryDarkBrush}" CornerRadius="14">
                     <Grid x:Name="RightPanel">
@@ -510,8 +539,8 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/> <!-- Version history row -->
                         </Grid.RowDefinitions>
-
                         <!-- Project Details -->
                         <TextBox x:Name="TitleTextBox" 
                                  FontSize="24" 
@@ -571,7 +600,7 @@
                                         </Grid.ColumnDefinitions>
                                         <Button Grid.Column="0" Content="Add File Link" Height="30" Margin="0,0,5,0" Click="AddFileLink_Click"
                                                 Style="{StaticResource PremiumButtonStyle}"/>
-                                        <!-- -->
+                                    <!-- -->
                                         <Button Grid.Column="1" Content="Add Folder Link" Height="30" Margin="5,0,0,0" Click="AddFolderLink_Click"
                                                 Style="{StaticResource PremiumButtonStyle}"/>
                                     </Grid>
@@ -598,7 +627,6 @@
                                 </DockPanel>
                             </Border>
                         </GroupBox>
-
                         <!-- Work Items Section -->
                         <Grid Grid.Row="4">
                             <Grid.ColumnDefinitions>
@@ -606,7 +634,6 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-
                             <!-- Bugs Section -->
                             <GroupBox Header="Bugs" Foreground="{StaticResource SoftWhiteBrush}">
                                 <Border Background="{StaticResource AccentGrayBrush}" CornerRadius="10">
@@ -623,7 +650,6 @@
                                     </DockPanel>
                                 </Border>
                             </GroupBox>
-
                             <!-- Features Section -->
                             <GroupBox Grid.Column="1" 
                                      Header="Features" 
@@ -643,7 +669,6 @@
                                     </DockPanel>
                                 </Border>
                             </GroupBox>
-
                             <!-- Vote History Section -->
                             <GroupBox Grid.Column="2"
                                      Header="Vote History"
@@ -659,9 +684,78 @@
                                 </Border>
                             </GroupBox>
                         </Grid>
+                        <!-- Version History Section -->
+                        <GroupBox Grid.Row="5" Header="Version History" Foreground="{StaticResource SoftWhiteBrush}">
+                            <Border Background="{StaticResource AccentGrayBrush}" CornerRadius="10" Padding="8">
+                                <DockPanel LastChildFill="True">
+                                    <!-- Responsive Input row -->
+                                    <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="140" MinWidth="100"/>
+                                            <ColumnDefinition Width="2*" MinWidth="180"/>
+                                            <ColumnDefinition Width="3*" MinWidth="260"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="160" MinWidth="120"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <!-- Version Number -->
+                                        <Grid Grid.Column="0">
+                                            <TextBox x:Name="NewVersionNumber" Background="{StaticResource AccentGrayBrush}" Foreground="{StaticResource SoftWhiteBrush}" BorderThickness="0" VerticalContentAlignment="Center" Padding="4">
+                                                <TextBox.Effect>
+                                                    <DropShadowEffect BlurRadius="6" ShadowDepth="1" Color="#222" Opacity="0.18"/>
+                                                </TextBox.Effect>
+                                            </TextBox>
+                                            <TextBlock Text="Version" Foreground="#88FFFFFF" IsHitTestVisible="False" VerticalAlignment="Center" Margin="6,0,0,0"
+                                                       Visibility="{Binding Text, ElementName=NewVersionNumber, Converter={StaticResource EmptyToVis}}"/>
+                                        </Grid>
+                                        <!-- Name (variable width) -->
+                                        <Grid Grid.Column="1" Margin="8,0,0,0">
+                                            <TextBox x:Name="NewVersionName" Background="{StaticResource AccentGrayBrush}" Foreground="{StaticResource SoftWhiteBrush}" BorderThickness="0" VerticalContentAlignment="Center" Padding="4">
+                                                <TextBox.Effect>
+                                                    <DropShadowEffect BlurRadius="6" ShadowDepth="1" Color="#222" Opacity="0.18"/>
+                                                </TextBox.Effect>
+                                            </TextBox>
+                                            <TextBlock Text="Name" Foreground="#88FFFFFF" IsHitTestVisible="False" VerticalAlignment="Center" Margin="6,0,0,0"
+                                                       Visibility="{Binding Text, ElementName=NewVersionName, Converter={StaticResource EmptyToVis}}"/>
+                                        </Grid>
+                                        <!-- Folder (variable width) -->
+                                        <Grid Grid.Column="2" Margin="8,0,0,0">
+                                            <TextBox x:Name="NewVersionFolder" Background="{StaticResource AccentGrayBrush}" Foreground="{StaticResource SoftWhiteBrush}" BorderThickness="0" VerticalContentAlignment="Center" Padding="4">
+                                                <TextBox.Effect>
+                                                    <DropShadowEffect BlurRadius="6" ShadowDepth="1" Color="#222" Opacity="0.18"/>
+                                                </TextBox.Effect>
+                                            </TextBox>
+                                            <TextBlock Text="Folder path or link" Foreground="#88FFFFFF" IsHitTestVisible="False" VerticalAlignment="Center" Margin="6,0,0,0"
+                                                       Visibility="{Binding Text, ElementName=NewVersionFolder, Converter={StaticResource EmptyToVis}}"/>
+                                        </Grid>
+                                        <Button Grid.Column="3" Content="Browse" Click="BrowseVersionFolder_Click" Style="{StaticResource PremiumButtonStyle}" Margin="8,0,0,0"/>
+                                        <!-- Release date shown as pickable but not required -->
+                                        <DatePicker Grid.Column="4" x:Name="NewVersionDate" HorizontalAlignment="Left" />
+                                        <Button Grid.Column="5" Content="Add Version" Click="AddVersion_Click" Style="{StaticResource PremiumButtonStyle}" Margin="8,0,0,0"/>
+                                    </Grid>
+                                    <ListView x:Name="VersionHistoryListView" ItemTemplate="{StaticResource VersionItemTemplate}" Background="{StaticResource AccentGrayBrush}" BorderThickness="0" Height="160" MinHeight="120" MaxHeight="260" VerticalAlignment="Top"/>
+                                </DockPanel>
+                            </Border>
+                        </GroupBox>
                     </Grid>
                 </Border>
             </Grid>
+            <!-- Top resize -->
+            <Thumb Grid.Row="1" Grid.Column="1" Cursor="SizeNS" DragDelta="ResizeTopThumb_DragDelta" Opacity="0" IsHitTestVisible="True"/>
+            <!-- Top-left corner -->
+            <Thumb Grid.Row="1" Grid.Column="0" Cursor="SizeNWSE" DragDelta="ResizeTopLeftThumb_DragDelta" Opacity="0" IsHitTestVisible="True"/>
+            <!-- Top-right corner -->
+            <Thumb Grid.Row="1" Grid.Column="2" Cursor="SizeNESW" DragDelta="ResizeTopRightThumb_DragDelta" Opacity="0" IsHitTestVisible="True"/>
+            <!-- Left resize -->
+            <Thumb Grid.Row="2" Grid.Column="0" Cursor="SizeWE" DragDelta="ResizeLeftThumb_DragDelta" Opacity="0" IsHitTestVisible="True"/>
+            <!-- Right resize -->
+            <Thumb Grid.Row="2" Grid.Column="2" Cursor="SizeWE" DragDelta="ResizeRightThumb_DragDelta" Opacity="0" IsHitTestVisible="True"/>
+            <!-- Bottom resize -->
+            <Thumb Grid.Row="3" Grid.Column="1" Cursor="SizeNS" DragDelta="ResizeBottomThumb_DragDelta" Opacity="0" IsHitTestVisible="True"/>
+            <!-- Bottom-left corner -->
+            <Thumb Grid.Row="3" Grid.Column="0" Cursor="SizeNESW" DragDelta="ResizeBottomLeftThumb_DragDelta" Opacity="0" IsHitTestVisible="True"/>
+            <!-- Bottom-right corner -->
+            <Thumb Grid.Row="3" Grid.Column="2" Cursor="SizeNWSE" DragDelta="ResizeBottomRightThumb_DragDelta" Opacity="0" IsHitTestVisible="True"/>
         </Grid>
     </Border>
 </Window>

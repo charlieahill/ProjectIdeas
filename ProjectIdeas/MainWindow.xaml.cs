@@ -13,6 +13,7 @@ using ProjectIdeas.Models;
 using ProjectIdeas.Services;
 using WinForms = System.Windows.Forms; // Only here, if you use FolderBrowserDialog
 using System.Windows.Interop;
+using System.Windows.Controls.Primitives;
 
 namespace ProjectIdeas
 {
@@ -21,7 +22,7 @@ namespace ProjectIdeas
     /// </summary>
     public partial class MainWindow : Window
     {
-        private readonly DataService _dataService = new();
+        private readonly DataService _data_service = new();
         private ObservableCollection<ProjectIdea> _ideas;
         private ObservableCollection<ProjectIdea> _filteredIdeas = new();
         private ProjectIdea? _selectedIdea;
@@ -31,11 +32,31 @@ namespace ProjectIdeas
         public MainWindow()
         {
             InitializeComponent();
-            _ideas = _dataService.LoadData();
+            MinHeight = 800;
+            Height = 900;
+            _ideas = _data_service.LoadData();
             _filteredIdeas = new ObservableCollection<ProjectIdea>(_ideas);
             IdeasListView.ItemsSource = _filteredIdeas;
             Title = $"Project Ideas Manager v{VersionManager.GetVersionString()}";
             Loaded += MainWindow_Loaded;
+            StateChanged += MainWindow_StateChanged;
+        }
+
+        private void MainWindow_StateChanged(object? sender, EventArgs e)
+        {
+            if (WindowState == WindowState.Maximized)
+            {
+                var workArea = SystemParameters.WorkArea;
+                Left = workArea.Left;
+                Top = workArea.Top;
+                Width = workArea.Width;
+                Height = workArea.Height;
+            }
+            else
+            {
+                Width = 1200;
+                Height = 700;
+            }
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -44,6 +65,9 @@ namespace ProjectIdeas
             {
                 IdeasListView.SelectedIndex = 0;
             }
+            var newDate = FindName("NewVersionDate") as DatePicker;
+            if (newDate != null)
+                newDate.SelectedDate = DateTime.Now;
         }
 
         private void ActiveOnlyCheckBox_Checked(object sender, RoutedEventArgs e)
@@ -105,7 +129,7 @@ namespace ProjectIdeas
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            _dataService.SaveData(_ideas);
+            _data_service.SaveData(_ideas);
         }
 
         private void AddNewIdea_Click(object sender, RoutedEventArgs e)
@@ -131,6 +155,9 @@ namespace ProjectIdeas
                 BugsListView.ItemsSource = _selectedIdea.Bugs;
                 FeaturesListView.ItemsSource = _selectedIdea.Features;
                 VoteHistoryListView.ItemsSource = _selectedIdea.VoteHistory.OrderByDescending(v => v.Date).ToList();
+                var versionsLv = FindName("VersionHistoryListView") as System.Windows.Controls.ListView;
+                if (versionsLv != null)
+                    versionsLv.ItemsSource = _selectedIdea.VersionHistory;
             }
         }
 
@@ -142,7 +169,9 @@ namespace ProjectIdeas
                 idea.VoteHistory.Add(new VoteRecord { Date = DateTime.Now, Direction = "Up" });
                 IdeasListView.Items.Refresh();
                 if (_selectedIdea == idea)
+                {
                     VoteHistoryListView.ItemsSource = idea.VoteHistory.OrderByDescending(v => v.Date).ToList();
+                }
             }
         }
 
@@ -154,7 +183,9 @@ namespace ProjectIdeas
                 idea.VoteHistory.Add(new VoteRecord { Date = DateTime.Now, Direction = "Down" });
                 IdeasListView.Items.Refresh();
                 if (_selectedIdea == idea)
+                {
                     VoteHistoryListView.ItemsSource = idea.VoteHistory.OrderByDescending(v => v.Date).ToList();
+                }
             }
         }
 
@@ -500,6 +531,122 @@ namespace ProjectIdeas
             }
 
             return false;
+        }
+
+        private void AddVersion_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedIdea == null) return;
+            var txtVer = FindName("NewVersionNumber") as System.Windows.Controls.TextBox;
+            var txtName = FindName("NewVersionName") as System.Windows.Controls.TextBox;
+            var txtFolder = FindName("NewVersionFolder") as System.Windows.Controls.TextBox;
+            var dp = FindName("NewVersionDate") as System.Windows.Controls.DatePicker;
+            var versionsLv = FindName("VersionHistoryListView") as System.Windows.Controls.ListView;
+
+            var v = new VersionRecord
+            {
+                VersionNumber = txtVer?.Text ?? string.Empty,
+                Name = txtName?.Text ?? string.Empty,
+                FolderLink = txtFolder?.Text ?? string.Empty,
+                ReleaseDate = dp?.SelectedDate ?? DateTime.Now
+            };
+            _selectedIdea.VersionHistory.Add(v);
+            versionsLv?.Items.Refresh();
+        }
+
+        private void RemoveVersion_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedIdea == null) return;
+            if (sender is System.Windows.Controls.Button wpfBtn && wpfBtn.CommandParameter is VersionRecord vr && _selectedIdea.VersionHistory.Contains(vr))
+            {
+                _selectedIdea.VersionHistory.Remove(vr);
+                var versionsLv = FindName("VersionHistoryListView") as System.Windows.Controls.ListView;
+                versionsLv?.Items.Refresh();
+                return;
+            }
+            if (sender is System.Windows.Controls.Button wpfBtn2 && wpfBtn2.DataContext is VersionRecord vr2 && _selectedIdea.VersionHistory.Contains(vr2))
+            {
+                _selectedIdea.VersionHistory.Remove(vr2);
+                var versionsLv = FindName("VersionHistoryListView") as System.Windows.Controls.ListView;
+                versionsLv?.Items.Refresh();
+            }
+        }
+
+        private void BrowseVersionFolder_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new WinForms.FolderBrowserDialog();
+            var result = dialog.ShowDialog();
+            if (result == WinForms.DialogResult.OK && !string.IsNullOrWhiteSpace(dialog.SelectedPath))
+            {
+                var txtFolder = FindName("NewVersionFolder") as System.Windows.Controls.TextBox;
+                if (txtFolder != null)
+                    txtFolder.Text = dialog.SelectedPath;
+            }
+        }
+
+        private void ResizeLeftThumb_DragDelta(object sender, DragDeltaEventArgs e)
+        {
+            double newWidth = Width - e.HorizontalChange;
+            double minWidth = MinWidth > 0 ? MinWidth : 400;
+            if (newWidth > minWidth)
+            {
+                Left += e.HorizontalChange;
+                Width = newWidth;
+            }
+        }
+
+        private void ResizeRightThumb_DragDelta(object sender, DragDeltaEventArgs e)
+        {
+            double newWidth = Width + e.HorizontalChange;
+            double minWidth = MinWidth > 0 ? MinWidth : 400;
+            if (newWidth > minWidth)
+            {
+                Width = newWidth;
+            }
+        }
+
+        private void ResizeBottomThumb_DragDelta(object sender, DragDeltaEventArgs e)
+        {
+            double newHeight = Height + e.VerticalChange;
+            double minHeight = MinHeight > 0 ? MinHeight : 300;
+            if (newHeight > minHeight)
+            {
+                Height = newHeight;
+            }
+        }
+
+        private void ResizeTopThumb_DragDelta(object sender, DragDeltaEventArgs e)
+        {
+            double newHeight = Height - e.VerticalChange;
+            double minHeight = MinHeight > 0 ? MinHeight : 300;
+            if (newHeight > minHeight)
+            {
+                Top += e.VerticalChange;
+                Height = newHeight;
+            }
+        }
+
+        private void ResizeTopLeftThumb_DragDelta(object sender, DragDeltaEventArgs e)
+        {
+            ResizeTopThumb_DragDelta(sender, e);
+            ResizeLeftThumb_DragDelta(sender, e);
+        }
+
+        private void ResizeTopRightThumb_DragDelta(object sender, DragDeltaEventArgs e)
+        {
+            ResizeTopThumb_DragDelta(sender, e);
+            ResizeRightThumb_DragDelta(sender, e);
+        }
+
+        private void ResizeBottomLeftThumb_DragDelta(object sender, DragDeltaEventArgs e)
+        {
+            ResizeLeftThumb_DragDelta(sender, e);
+            ResizeBottomThumb_DragDelta(sender, e);
+        }
+
+        private void ResizeBottomRightThumb_DragDelta(object sender, DragDeltaEventArgs e)
+        {
+            ResizeRightThumb_DragDelta(sender, e);
+            ResizeBottomThumb_DragDelta(sender, e);
         }
     }
 
