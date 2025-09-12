@@ -28,6 +28,8 @@ namespace ProjectIdeas
         private ProjectIdea? _selectedIdea;
         private string _searchText = string.Empty;
         private bool _activeOnly = false;
+        private Rect _restoreBounds;
+        private bool _isCustomMaximized = false;
 
         public MainWindow()
         {
@@ -44,18 +46,20 @@ namespace ProjectIdeas
 
         private void MainWindow_StateChanged(object? sender, EventArgs e)
         {
-            if (WindowState == WindowState.Maximized)
+            // If the system sets WindowState to Maximized (e.g. via keyboard), adjust to work area
+            if (WindowState == WindowState.Maximized && !_isCustomMaximized)
             {
                 var workArea = SystemParameters.WorkArea;
                 Left = workArea.Left;
                 Top = workArea.Top;
                 Width = workArea.Width;
                 Height = workArea.Height;
+                _isCustomMaximized = true;
+                UpdateMaximizeIcon(true);
             }
-            else
+            else if (WindowState == WindowState.Normal && !_isCustomMaximized)
             {
-                Width = 1200;
-                Height = 700;
+                UpdateMaximizeIcon(false);
             }
         }
 
@@ -468,10 +472,36 @@ namespace ProjectIdeas
 
         private void MaximizeRestore_Click(object sender, RoutedEventArgs e)
         {
-            if (WindowState == WindowState.Maximized)
+            if (_isCustomMaximized)
+            {
+                // Restore
+                Left = _restoreBounds.Left;
+                Top = _restoreBounds.Top;
+                Width = _restoreBounds.Width;
+                Height = _restoreBounds.Height;
+                _isCustomMaximized = false;
                 WindowState = WindowState.Normal;
+                UpdateMaximizeIcon(false);
+            }
+            else if (WindowState == WindowState.Maximized)
+            {
+                // System maximized - restore to normal
+                WindowState = WindowState.Normal;
+                UpdateMaximizeIcon(false);
+            }
             else
-                WindowState = WindowState.Maximized;
+            {
+                // Custom maximize to work area (respect taskbar)
+                _restoreBounds = new Rect(Left, Top, Width, Height);
+                var workArea = SystemParameters.WorkArea;
+                Left = workArea.Left;
+                Top = workArea.Top;
+                Width = workArea.Width;
+                Height = workArea.Height;
+                _isCustomMaximized = true;
+                WindowState = WindowState.Normal; // keep state Normal but sized to work area
+                UpdateMaximizeIcon(true);
+            }
         }
 
         private void Close_Click(object sender, RoutedEventArgs e)
@@ -491,11 +521,8 @@ namespace ProjectIdeas
 
             if (e.ClickCount == 2)
             {
-                // Double-click toggles maximize/restore
-                if (WindowState == WindowState.Maximized)
-                    WindowState = WindowState.Normal;
-                else
-                    WindowState = WindowState.Maximized;
+                // Double-click toggles maximize/restore - reuse same logic as button
+                MaximizeRestore_Click(this, new RoutedEventArgs());
                 e.Handled = true;
             }
             else if (e.ClickCount == 1)
@@ -647,6 +674,15 @@ namespace ProjectIdeas
         {
             ResizeRightThumb_DragDelta(sender, e);
             ResizeBottomThumb_DragDelta(sender, e);
+        }
+
+        private void UpdateMaximizeIcon(bool isMaximized)
+        {
+            var btn = FindName("MaximizeButton") as System.Windows.Controls.Button;
+            if (btn == null) return;
+            // Use common symbols: restore (🗗) for maximized, square (☐) for normal
+            btn.Content = isMaximized ? "🗗" : "☐";
+            btn.ToolTip = isMaximized ? "Restore" : "Maximize";
         }
     }
 
