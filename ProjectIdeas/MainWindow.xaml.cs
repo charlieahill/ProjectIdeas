@@ -73,6 +73,7 @@ namespace ProjectIdeas
             var newDate = FindName("NewVersionDate") as DatePicker;
             if (newDate != null)
                 newDate.SelectedDate = DateTime.Now;
+            // Theme selection now handled in settings dialog
         }
 
         private void ActiveOnlyCheckBox_Checked(object sender, RoutedEventArgs e)
@@ -812,6 +813,29 @@ namespace ProjectIdeas
                 IdeasListView.SelectedIndex = 0;
         }
 
+        private void SettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            int currentTheme = ProjectIdeas.Properties.Settings.Default.ThemeSelection;
+            var dlg = new SettingsDialog(currentTheme) { Owner = this };
+            if (dlg.ShowDialog() == true)
+            {
+                int idx = dlg.SelectedThemeIndex;
+                var app = System.Windows.Application.Current as App;
+                if (app != null)
+                {
+                    ThemeOption option = ThemeOption.System;
+                    try { option = (ThemeOption)idx; } catch { option = ThemeOption.System; }
+                    app.ApplyTheme(option);
+                    app.SaveThemeSetting(option);
+                }
+            }
+        }
+
+        private void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // No longer used; theme selection is now in settings dialog
+        }
+
         private void InputManager_PreProcessInput(object sender, System.Windows.Input.PreProcessInputEventArgs e)
         {
             var inputEventArgs = e.StagingItem.Input;
@@ -826,6 +850,25 @@ namespace ProjectIdeas
                         UpdateMoveButtonVisuals();
                     }
                 }
+            }
+        }
+
+        private void DataFolderButton_Click(object sender, RoutedEventArgs e)
+        {
+            string dataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ProjectIdeas");
+            if (!Directory.Exists(dataFolder))
+                Directory.CreateDirectory(dataFolder);
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = dataFolder,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Could not open data folder: {ex.Message}");
             }
         }
     }

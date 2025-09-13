@@ -1,0 +1,29 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- Dark theme brushes -->
+  <Color x:Key="PrimaryColor">#0F1724</Color>
+  <Color x:Key="SurfaceColor">#111827</Color>
+  <Color x:Key="AccentBlue">#2196F3</Color>
+  <Color x:Key="AccentYellow">#FFD43B</Color>
+  <Color x:Key="AccentGray">#22262D</Color>
+  <Color x:Key="AccentGreen">#4CAF50</Color>
+  <Color x:Key="AccentRed">#F87171</Color>
+  <Color x:Key="BorderColor">#2B3138</Color>
+  <Color x:Key="MutedTextColor">#9CA3AF</Color>
+  <Color x:Key="TextColor">#F3F4F6</Color>
+
+  <SolidColorBrush x:Key="WindowBackgroundBrush" Color="{StaticResource SurfaceColor}"/>
+  <SolidColorBrush x:Key="SecondaryBackgroundBrush" Color="{StaticResource AccentGray}"/>
+  <SolidColorBrush x:Key="PrimaryBarBrush" Color="{StaticResource SurfaceColor}"/>
+  <SolidColorBrush x:Key="WindowBorderBrush" Color="{StaticResource BorderColor}"/>
+  <SolidColorBrush x:Key="AccentBlueBrush" Color="{StaticResource AccentBlue}"/>
+  <SolidColorBrush x:Key="AccentYellowBrush" Color="{StaticResource AccentYellow}"/>
+  <SolidColorBrush x:Key="AccentGrayBrush" Color="{StaticResource AccentGray}"/>
+  <SolidColorBrush x:Key="AccentGreenBrush" Color="{StaticResource AccentGreen}"/>
+  <SolidColorBrush x:Key="AccentRedBrush" Color="{StaticResource AccentRed}"/>
+  <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}"/>
+  <SolidColorBrush x:Key="MutedTextBrush" Color="{StaticResource MutedTextColor}"/>
+  <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}"/>
+  <SolidColorBrush x:Key="HoverSurfaceBrush" Color="#263038"/>
+  <SolidColorBrush x:Key="ActiveSurfaceBrush" Color="#1F2937"/>
+</ResourceDictionary>
