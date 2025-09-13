@@ -140,6 +140,10 @@ namespace ProjectIdeas
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            // Persist the current order of _filteredIdeas to _ideas before saving
+            _ideas.Clear();
+            foreach (var idea in _filteredIdeas)
+                _ideas.Add(idea);
             _data_service.SaveData(_ideas);
         }
 
@@ -149,11 +153,38 @@ namespace ProjectIdeas
             {
                 Title = "New Project Idea",
                 Description = "Enter description here...",
-                Status = "Open"
+                Status = "Open",
+                CreatedDate = DateTime.Now
             };
             _ideas.Add(newIdea);
             ApplyFilters();
             IdeasListView.SelectedItem = newIdea;
+        }
+
+        private void AddVersion_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedIdea == null) return;
+            var txtVer = FindName("NewVersionNumber") as System.Windows.Controls.TextBox;
+            var txtName = FindName("NewVersionName") as System.Windows.Controls.TextBox;
+            var txtFolder = FindName("NewVersionFolder") as System.Windows.Controls.TextBox;
+            var dp = FindName("NewVersionDate") as System.Windows.Controls.DatePicker;
+            var versionsLv = FindName("VersionHistoryListView") as System.Windows.Controls.ListView;
+
+            var v = new VersionRecord
+            {
+                VersionNumber = txtVer?.Text ?? string.Empty,
+                Name = txtName?.Text ?? string.Empty,
+                FolderLink = txtFolder?.Text ?? string.Empty,
+                ReleaseDate = dp?.SelectedDate ?? DateTime.Now
+            };
+            _selectedIdea.VersionHistory.Add(v);
+            versionsLv?.Items.Refresh();
+
+            // Clear input boxes after add
+            if (txtVer != null) txtVer.Text = string.Empty;
+            if (txtName != null) txtName.Text = string.Empty;
+            if (txtFolder != null) txtFolder.Text = string.Empty;
+            if (dp != null) dp.SelectedDate = DateTime.Now;
         }
 
         private void IdeasListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -199,6 +230,15 @@ namespace ProjectIdeas
                 if (versionsLv != null)
                     versionsLv.ItemsSource = _selectedIdea.VersionHistory;
             }
+            // Clear version input boxes on idea change
+            var txtVer2 = FindName("NewVersionNumber") as System.Windows.Controls.TextBox;
+            var txtName2 = FindName("NewVersionName") as System.Windows.Controls.TextBox;
+            var txtFolder2 = FindName("NewVersionFolder") as System.Windows.Controls.TextBox;
+            var dp2 = FindName("NewVersionDate") as System.Windows.Controls.DatePicker;
+            if (txtVer2 != null) txtVer2.Text = string.Empty;
+            if (txtName2 != null) txtName2.Text = string.Empty;
+            if (txtFolder2 != null) txtFolder2.Text = string.Empty;
+            if (dp2 != null) dp2.SelectedDate = DateTime.Now;
         }
 
         private void UpVote_Click(object sender, RoutedEventArgs e)
@@ -247,7 +287,8 @@ namespace ProjectIdeas
 
             var newBug = new WorkItem { Description = "New bug" };
             _selectedIdea.Bugs.Add(newBug);
-            BugsListView.Items.Refresh();
+            // Only refresh after add
+            // BugsListView.Items.Refresh(); // Not needed, view will update
             BugsListView.SelectedItem = newBug;
             BugsListView.UpdateLayout();
             var container = BugsListView.ItemContainerGenerator.ContainerFromItem(newBug) as System.Windows.Controls.ListViewItem;
@@ -266,7 +307,8 @@ namespace ProjectIdeas
 
             var newFeature = new WorkItem { Description = "New feature" };
             _selectedIdea.Features.Add(newFeature);
-            FeaturesListView.Items.Refresh();
+            // Only refresh after add
+            // FeaturesListView.Items.Refresh(); // Not needed, view will update
             FeaturesListView.SelectedItem = newFeature;
             FeaturesListView.UpdateLayout();
             var container = FeaturesListView.ItemContainerGenerator.ContainerFromItem(newFeature) as System.Windows.Controls.ListViewItem;
@@ -325,13 +367,13 @@ namespace ProjectIdeas
                 {
                     _selectedIdea.Bugs.Remove(item);
                     _selectedIdea.Bugs.Add(item);
-                    BugsListView.Items.Refresh();
+                    // BugsListView.Items.Refresh(); // Not needed
                 }
                 else if (_selectedIdea.Features.Contains(item))
                 {
                     _selectedIdea.Features.Remove(item);
                     _selectedIdea.Features.Add(item);
-                    FeaturesListView.Items.Refresh();
+                    // FeaturesListView.Items.Refresh(); // Not needed
                 }
             }
         }
@@ -685,26 +727,6 @@ namespace ProjectIdeas
                 src = System.Windows.Media.VisualTreeHelper.GetParent(src);
             }
             return false;
-        }
-
-        private void AddVersion_Click(object sender, RoutedEventArgs e)
-        {
-            if (_selectedIdea == null) return;
-            var txtVer = FindName("NewVersionNumber") as System.Windows.Controls.TextBox;
-            var txtName = FindName("NewVersionName") as System.Windows.Controls.TextBox;
-            var txtFolder = FindName("NewVersionFolder") as System.Windows.Controls.TextBox;
-            var dp = FindName("NewVersionDate") as System.Windows.Controls.DatePicker;
-            var versionsLv = FindName("VersionHistoryListView") as System.Windows.Controls.ListView;
-
-            var v = new VersionRecord
-            {
-                VersionNumber = txtVer?.Text ?? string.Empty,
-                Name = txtName?.Text ?? string.Empty,
-                FolderLink = txtFolder?.Text ?? string.Empty,
-                ReleaseDate = dp?.SelectedDate ?? DateTime.Now
-            };
-            _selectedIdea.VersionHistory.Add(v);
-            versionsLv?.Items.Refresh();
         }
 
         private void RemoveVersion_Click(object sender, RoutedEventArgs e)

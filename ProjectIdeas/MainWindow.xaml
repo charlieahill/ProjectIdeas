@@ -166,7 +166,8 @@
                                         Background="{DynamicResource AccentGrayBrush}"
                                         BorderBrush="{DynamicResource AccentBlueBrush}"
                                         BorderThickness="1"
-                                        CornerRadius="6">
+                                        CornerRadius="6"
+                                        MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ComboBox}}">
                                     <ScrollViewer Margin="4,6,4,6" SnapsToDevicePixels="True">
                                         <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
                                     </ScrollViewer>
@@ -328,7 +329,7 @@
         <DataTemplate x:Key="WorkItemTemplate">
             <DockPanel>
                 <CheckBox IsChecked="{Binding IsCompleted, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,5,0" Click="WorkItemDone_Click"/>
-                <TextBox Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent" FontSize="11" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" TextDecorations="{Binding IsCompleted, Converter={StaticResource BoolToTextDecorationConverter}}"/>
+                <TextBox Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" BorderThickness="0" Background="Transparent" FontSize="11" Foreground="{DynamicResource TextBrush}" VerticalAlignment="Center" TextDecorations="{Binding IsCompleted, Converter={StaticResource BoolToTextDecorationConverter}}"/>
                 <StackPanel Orientation="Horizontal" Margin="6,0,0,0" VerticalAlignment="Center">
                     <Button Style="{StaticResource SmallReorderButtonStyle}" Click="MoveWorkItemUp_Click" ToolTip="Move Up">
                         <Path Data="M 0 8 L 6 0 L 12 8 Z" Fill="{DynamicResource TextBrush}" Width="12" Height="8"/>
@@ -386,7 +387,7 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="{Binding Date, StringFormat=yyyy-MM-dd HH:mm}" FontWeight="Normal" Foreground="{DynamicResource TextBrush}" FontSize="11"/>
+                    <TextBlock Grid.Column="0" Text="{Binding Date, StringFormat=yyyy-MM-dd}" FontWeight="Normal" Foreground="{DynamicResource TextBrush}" FontSize="11"/>
                     <TextBlock Grid.Column="1" Text="{Binding Direction}" Foreground="{DynamicResource TextBrush}" Margin="12,0,0,0" FontSize="11"/>
                     <TextBlock x:Name="ArrowIcon" Grid.Column="2" Text="{Binding Direction, Converter={StaticResource VoteDirectionToIconConverter}}" FontSize="13" Margin="12,0,0,0">
                         <TextBlock.Style>
@@ -421,7 +422,7 @@
                     <TextBlock Grid.Column="0" Text="{Binding VersionNumber}" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" FontWeight="Normal" FontSize="11"/>
                     <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" FontSize="11"/>
                     <TextBlock Grid.Column="2" Text="{Binding FolderLink}" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" TextTrimming="CharacterEllipsis" FontSize="11"/>
-                    <TextBlock Grid.Column="3" Text="{Binding ReleaseDate, StringFormat=yyyy-MM-dd HH:mm}" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" FontSize="11"/>
+                    <TextBlock Grid.Column="3" Text="{Binding ReleaseDate, StringFormat=yyyy-MM-dd}" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}" FontSize="11"/>
                     <Button Grid.Column="4" Content="🗑" Style="{StaticResource VoteButtonStyle}" Click="RemoveVersion_Click" CommandParameter="{Binding}" ToolTip="Remove version" Margin="6,0,0,0"/>
                 </Grid>
             </Border>
@@ -533,7 +534,13 @@
                                   HorizontalContentAlignment="Stretch"
                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                   BorderThickness="0"
-                                  Background="{DynamicResource SecondaryBackgroundBrush}"/>
+                                  Background="{DynamicResource SecondaryBackgroundBrush}">
+                            <ListView.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel VirtualizationMode="Recycling"/>
+                                </ItemsPanelTemplate>
+                            </ListView.ItemsPanel>
+                        </ListView>
                     </DockPanel>
                 </Border>
                 <!-- Right Panel -->
@@ -556,15 +563,19 @@
                                  BorderBrush="{DynamicResource AccentBlueBrush}"
                                  Style="{StaticResource PremiumTextBoxStyle}"
                                  Text="{Binding ElementName=IdeasListView, Path=SelectedItem.Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-
-                        <!-- Status ComboBox -->
+                        <!-- Status ComboBox and Idea Added label on same row -->
                         <Grid Grid.Row="1" Margin="0,0,0,10" Height="32">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
                             <ComboBox x:Name="StatusComboBox"
                                       Style="{StaticResource PremiumComboBoxStyle}"
                                       SelectedValue="{Binding ElementName=IdeasListView, Path=SelectedItem.Status, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                       SelectedValuePath="Content"
                                       VerticalAlignment="Stretch"
-                                      HorizontalAlignment="Stretch">
+                                      HorizontalAlignment="Stretch"
+                                      Grid.Column="0">
                                 <ComboBoxItem Content="Open"/>
                                 <ComboBoxItem Content="In Progress"/>
                                 <ComboBoxItem Content="On Hold"/>
@@ -574,21 +585,50 @@
                             <Button Background="Transparent" BorderThickness="0" Focusable="False"
                                     HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                                     Click="StatusComboBoxOverlay_Click"
-                                    />
+                                    Grid.Column="0"/>
+                            <Label x:Name="IdeaAddedLabel"
+                                   Grid.Column="1"
+                                   VerticalAlignment="Center"
+                                   Margin="16,0,0,0"
+                                   Foreground="{DynamicResource MutedTextBrush}"
+                                   FontSize="12"
+                                   Content="{Binding ElementName=IdeasListView, Path=SelectedItem.CreatedDate, StringFormat='Idea added: {0:yyyy-MM-dd}', Mode=OneWay}"/>
                         </Grid>
 
-                        <TextBox x:Name="DescriptionTextBox" 
-                                 Grid.Row="2"
-                                 Height="100" 
-                                 TextWrapping="Wrap" 
-                                 AcceptsReturn="True" 
-                                 Margin="0,0,0,10"
-                                 Foreground="{DynamicResource TextBrush}"
-                                 Background="{DynamicResource AccentGrayBrush}"
-                                 BorderBrush="{DynamicResource AccentBlueBrush}"
-                                 Style="{StaticResource PremiumTextBoxStyle}"
-                                 Text="{Binding ElementName=IdeasListView, Path=SelectedItem.Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 GotFocus="DescriptionTextBox_GotFocus"/>
+                        <!-- Description and Vote History side by side, now with GroupBox around description -->
+                        <Grid Grid.Row="2" Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="0.8*"/>
+                            </Grid.ColumnDefinitions>
+                            <GroupBox Grid.Column="0" Header="Description" Foreground="{DynamicResource TextBrush}" Margin="0,0,10,0">
+                                <TextBox x:Name="DescriptionTextBox" 
+                                         Height="100" 
+                                         TextWrapping="Wrap" 
+                                         AcceptsReturn="True" 
+                                         Foreground="{DynamicResource TextBrush}"
+                                         Background="{DynamicResource AccentGrayBrush}"
+                                         BorderBrush="{DynamicResource AccentBlueBrush}"
+                                         Style="{StaticResource PremiumTextBoxStyle}"
+                                         Text="{Binding ElementName=IdeasListView, Path=SelectedItem.Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         GotFocus="DescriptionTextBox_GotFocus"/>
+                            </GroupBox>
+                            <GroupBox Grid.Column="1" Header="Vote History" Margin="0,0,0,0" Foreground="{DynamicResource TextBrush}">
+                                <Border Background="{DynamicResource AccentGrayBrush}" CornerRadius="10">
+                                    <ListView x:Name="VoteHistoryListView"
+                                              Background="{DynamicResource AccentGrayBrush}"
+                                              BorderThickness="0"
+                                              ItemTemplate="{StaticResource VoteHistoryItemTemplate}"
+                                              HorizontalContentAlignment="Stretch">
+                                        <ListView.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <VirtualizingStackPanel VirtualizationMode="Recycling"/>
+                                            </ItemsPanelTemplate>
+                                        </ListView.ItemsPanel>
+                                    </ListView>
+                                </Border>
+                            </GroupBox>
+                        </Grid>
 
                         <!-- Files Section -->
                         <GroupBox Grid.Row="3" Header="Files" Foreground="{DynamicResource TextBrush}">
@@ -612,6 +652,11 @@
                                         </Grid.ColumnDefinitions>
                                         <ListView x:Name="FilesListView" Grid.Column="0" MouseDoubleClick="FilesListView_MouseDoubleClick" Background="{DynamicResource AccentGrayBrush}" BorderThickness="0"
                                                  SelectionChanged="FilesListView_SelectionChanged">
+                                            <ListView.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <VirtualizingStackPanel VirtualizationMode="Recycling"/>
+                                                </ItemsPanelTemplate>
+                                            </ListView.ItemsPanel>
                                             <ListView.ItemTemplate>
                                                 <DataTemplate>
                                                     <DockPanel>
@@ -628,12 +673,11 @@
                                 </DockPanel>
                             </Border>
                         </GroupBox>
-                        <!-- Work Items Section -->
+                        <!-- Work Items Section: Bugs and Features each take half width -->
                         <Grid Grid.Row="4">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="1.6*"/>
-                                <ColumnDefinition Width="1.6*"/>
-                                <ColumnDefinition Width="0.8*"/>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="1*"/>
                             </Grid.ColumnDefinitions>
                             <!-- Bugs Section -->
                             <GroupBox Header="Bugs" Foreground="{DynamicResource TextBrush}">
@@ -645,7 +689,15 @@
                                         </StackPanel>
                                         <ListView x:Name="BugsListView"
                                                   ItemTemplate="{StaticResource WorkItemTemplate}"
-                                                  Background="{DynamicResource AccentGrayBrush}" BorderThickness="0"/>
+                                                  Background="{DynamicResource AccentGrayBrush}" BorderThickness="0"
+                                                  VirtualizingStackPanel.IsVirtualizing="True"
+                                                  VirtualizingStackPanel.VirtualizationMode="Recycling">
+                                            <ListView.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <VirtualizingStackPanel VirtualizationMode="Recycling"/>
+                                                </ItemsPanelTemplate>
+                                            </ListView.ItemsPanel>
+                                        </ListView>
                                     </DockPanel>
                                 </Border>
                             </GroupBox>
@@ -659,19 +711,16 @@
                                         </StackPanel>
                                         <ListView x:Name="FeaturesListView"
                                                   ItemTemplate="{StaticResource WorkItemTemplate}"
-                                                  Background="{DynamicResource AccentGrayBrush}" BorderThickness="0"/>
+                                                  Background="{DynamicResource AccentGrayBrush}" BorderThickness="0"
+                                                  VirtualizingStackPanel.IsVirtualizing="True"
+                                                  VirtualizingStackPanel.VirtualizationMode="Recycling">
+                                            <ListView.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <VirtualizingStackPanel VirtualizationMode="Recycling"/>
+                                                </ItemsPanelTemplate>
+                                            </ListView.ItemsPanel>
+                                        </ListView>
                                     </DockPanel>
-                                </Border>
-                            </GroupBox>
-                            <!-- Vote History Section -->
-                            <GroupBox Grid.Column="2" Header="Vote History" Margin="5,0,0,0" Foreground="{DynamicResource TextBrush}">
-                                <Border Background="{DynamicResource AccentGrayBrush}" CornerRadius="10">
-                                    <ListView x:Name="VoteHistoryListView"
-                                              Background="{DynamicResource AccentGrayBrush}"
-                                              BorderThickness="0"
-                                              ItemTemplate="{StaticResource VoteHistoryItemTemplate}"
-                                              HorizontalContentAlignment="Stretch">
-                                    </ListView>
                                 </Border>
                             </GroupBox>
                         </Grid>
@@ -724,7 +773,13 @@
                                         <DatePicker Grid.Column="4" x:Name="NewVersionDate" HorizontalAlignment="Left" />
                                         <Button Grid.Column="5" Content="Add Version" Click="AddVersion_Click" Style="{StaticResource PremiumButtonStyle}" Margin="8,0,0,0"/>
                                     </Grid>
-                                    <ListView x:Name="VersionHistoryListView" ItemTemplate="{StaticResource VersionItemTemplate}" Background="{DynamicResource AccentGrayBrush}" BorderThickness="0" Height="160" MinHeight="120" MaxHeight="260" VerticalAlignment="Top" MouseDoubleClick="VersionHistoryListView_MouseDoubleClick"/>
+                                    <ListView x:Name="VersionHistoryListView" ItemTemplate="{StaticResource VersionItemTemplate}" Background="{DynamicResource AccentGrayBrush}" BorderThickness="0" Height="160" MinHeight="120" MaxHeight="260" VerticalAlignment="Top" MouseDoubleClick="VersionHistoryListView_MouseDoubleClick">
+                                        <ListView.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <VirtualizingStackPanel VirtualizationMode="Recycling"/>
+                                            </ItemsPanelTemplate>
+                                        </ListView.ItemsPanel>
+                                    </ListView>
                                 </DockPanel>
                             </Border>
                         </GroupBox>
