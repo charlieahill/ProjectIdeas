@@ -235,7 +235,7 @@
                                 <Setter Property="Background" Value="{DynamicResource ActiveSurfaceBrush}"/>
                             </Trigger>
                             <DataTrigger Binding="{Binding RelativeSource={RelativeSource Self}, Path=(local:MainWindow.IsShiftPressed)}" Value="True">
-                                <Setter Property="Background" Value="#F7F7FA"/>
+                                <Setter Property="Background" Value="{DynamicResource AccentYellowBrush}"/>
                             </DataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -631,20 +631,18 @@
                         <!-- Work Items Section -->
                         <Grid Grid.Row="4">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="1.6*"/>
+                                <ColumnDefinition Width="1.6*"/>
+                                <ColumnDefinition Width="0.8*"/>
                             </Grid.ColumnDefinitions>
                             <!-- Bugs Section -->
                             <GroupBox Header="Bugs" Foreground="{DynamicResource TextBrush}">
                                 <Border Background="{DynamicResource AccentGrayBrush}" CornerRadius="10">
                                     <DockPanel>
-                                        <Button DockPanel.Dock="Top" 
-                                                Content="Add Bug" 
-                                                Height="30" 
-                                                Margin="0,0,0,10"
-                                                Style="{StaticResource PremiumButtonStyle}"
-                                                Click="AddBug_Click"/>
+                                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="0,0,0,8">
+                                            <Button Content="Add Bug" Height="30" Style="{StaticResource PremiumButtonStyle}" Click="AddBug_Click"/>
+                                            <CheckBox Content="Show completed" VerticalAlignment="Center" Margin="8,4,0,0" Checked="BugsShowCompletedCheckBox_Checked" Unchecked="BugsShowCompletedCheckBox_Checked"/>
+                                        </StackPanel>
                                         <ListView x:Name="BugsListView"
                                                   ItemTemplate="{StaticResource WorkItemTemplate}"
                                                   Background="{DynamicResource AccentGrayBrush}" BorderThickness="0"/>
@@ -652,18 +650,13 @@
                                 </Border>
                             </GroupBox>
                             <!-- Features Section -->
-                            <GroupBox Grid.Column="1" 
-                                     Header="Features" 
-                                     Margin="5,0,0,0"
-                                     Foreground="{DynamicResource TextBrush}">
+                            <GroupBox Grid.Column="1" Header="Features" Margin="5,0,0,0" Foreground="{DynamicResource TextBrush}">
                                 <Border Background="{DynamicResource AccentGrayBrush}" CornerRadius="10">
                                     <DockPanel>
-                                        <Button DockPanel.Dock="Top" 
-                                                Content="Add Feature" 
-                                                Height="30" 
-                                                Margin="0,0,0,10"
-                                                Style="{StaticResource PremiumButtonStyle}"
-                                                Click="AddFeature_Click"/>
+                                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="0,0,0,8">
+                                            <Button Content="Add Feature" Height="30" Style="{StaticResource PremiumButtonStyle}" Click="AddFeature_Click"/>
+                                            <CheckBox Content="Show completed" VerticalAlignment="Center" Margin="8,4,0,0" Checked="FeaturesShowCompletedCheckBox_Checked" Unchecked="FeaturesShowCompletedCheckBox_Checked"/>
+                                        </StackPanel>
                                         <ListView x:Name="FeaturesListView"
                                                   ItemTemplate="{StaticResource WorkItemTemplate}"
                                                   Background="{DynamicResource AccentGrayBrush}" BorderThickness="0"/>
@@ -671,10 +664,7 @@
                                 </Border>
                             </GroupBox>
                             <!-- Vote History Section -->
-                            <GroupBox Grid.Column="2"
-                                     Header="Vote History"
-                                     Margin="5,0,0,0"
-                                     Foreground="{DynamicResource TextBrush}">
+                            <GroupBox Grid.Column="2" Header="Vote History" Margin="5,0,0,0" Foreground="{DynamicResource TextBrush}">
                                 <Border Background="{DynamicResource AccentGrayBrush}" CornerRadius="10">
                                     <ListView x:Name="VoteHistoryListView"
                                               Background="{DynamicResource AccentGrayBrush}"

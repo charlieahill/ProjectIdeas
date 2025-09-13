@@ -4,7 +4,7 @@ namespace ProjectIdeas.Services
 {
     public static class VersionManager
     {
-        public static Version CurrentVersion { get; } = new Version(1, 0, 0);
+        public static Version CurrentVersion { get; } = new Version(2, 0, 0);
         
         public static string GetVersionString() => CurrentVersion.ToString();
         

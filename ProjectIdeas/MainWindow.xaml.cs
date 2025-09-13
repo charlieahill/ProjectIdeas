@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -30,6 +31,10 @@ namespace ProjectIdeas
         private bool _activeOnly = false;
         private Rect _restoreBounds;
         private bool _isCustomMaximized = false;
+        private bool _showCompletedBugs = false;
+        private bool _showCompletedFeatures = false;
+        private ICollectionView? _bugsView;
+        private ICollectionView? _featuresView;
 
         public MainWindow()
         {
@@ -158,8 +163,37 @@ namespace ProjectIdeas
             {
                 RightPanel.DataContext = _selectedIdea;
                 FilesListView.ItemsSource = _selectedIdea.FileLinks;
-                BugsListView.ItemsSource = _selectedIdea.Bugs;
-                FeaturesListView.ItemsSource = _selectedIdea.Features;
+
+                // Setup bugs view with filter
+                _bugsView = CollectionViewSource.GetDefaultView(_selectedIdea.Bugs);
+                if (_bugsView != null)
+                {
+                    _bugsView.Filter = o =>
+                    {
+                        if (o is WorkItem wi)
+                        {
+                            return _showCompletedBugs || !wi.IsCompleted;
+                        }
+                        return true;
+                    };
+                }
+                BugsListView.ItemsSource = _bugsView;
+
+                // Setup features view with filter
+                _featuresView = CollectionViewSource.GetDefaultView(_selectedIdea.Features);
+                if (_featuresView != null)
+                {
+                    _featuresView.Filter = o =>
+                    {
+                        if (o is WorkItem wi)
+                        {
+                            return _showCompletedFeatures || !wi.IsCompleted;
+                        }
+                        return true;
+                    };
+                }
+                FeaturesListView.ItemsSource = _featuresView;
+
                 VoteHistoryListView.ItemsSource = _selectedIdea.VoteHistory.OrderByDescending(v => v.Date).ToList();
                 var versionsLv = FindName("VersionHistoryListView") as System.Windows.Controls.ListView;
                 if (versionsLv != null)
@@ -870,6 +904,20 @@ namespace ProjectIdeas
             {
                 System.Windows.MessageBox.Show($"Could not open data folder: {ex.Message}");
             }
+        }
+
+        private void BugsShowCompletedCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            var cb = sender as System.Windows.Controls.CheckBox;
+            _showCompletedBugs = cb != null && cb.IsChecked == true;
+            _bugsView?.Refresh();
+        }
+
+        private void FeaturesShowCompletedCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            var cb = sender as System.Windows.Controls.CheckBox;
+            _showCompletedFeatures = cb != null && cb.IsChecked == true;
+            _featuresView?.Refresh();
         }
     }
 
